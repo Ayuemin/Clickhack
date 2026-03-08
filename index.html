@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <title>ClickHack | Universal Studio</title>
+    <title>ClickHack | Studio</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#09090b">
@@ -42,12 +42,11 @@
         .preview.active { display: block; z-index: 20; }
         .preview h1, .preview h2, .preview h3 { color: #fff; margin: 1.5rem 0 1rem 0; }
         .preview p { margin: 0 0 1.2rem 0; color: #e4e4e7; }
-        .preview table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+        .preview table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; border: 1px solid #3f3f46; }
         .preview th, .preview td { border: 1px solid #3f3f46; padding: 0.75rem; text-align: left; }
-        .preview th { background: #27272a; }
         footer { display: flex; justify-content: space-between; padding: 0.4rem 0.75rem; background: var(--panel); border-radius: 0.75rem; border: 1px solid var(--border); font-size: 0.7rem; color: var(--mut); }
-        footer a { color: var(--accent); text-decoration: none; font-weight: bold; }
-        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--ink); color: #000; padding: 0.6rem 1.2rem; border-radius: 2rem; font-weight: 700; font-size: 0.8rem; z-index: 1000; }
+        footer b { color: var(--accent); }
+        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--ink); color: #000; padding: 0.6rem 1.2rem; border-radius: 2rem; font-weight: 700; font-size: 0.8rem; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         @media (max-width: 500px) { .btn-text { display: none; } }
     </style>
 </head>
@@ -58,7 +57,7 @@
         <div class="btn-group">
             <button onclick="clearText()"><i class="ph ph-trash"></i></button>
             <button id="btnSpeak" onclick="toggleSpeech()" class="primary"><i class="ph ph-speaker-high"></i><span class="btn-text" data-key="speak">Голос</span></button>
-            <button id="btnCopy" class="primary" onclick="copyForDzen()"><i class="ph ph-copy"></i><span class="btn-text" data-key="copy">Копия</span></button>
+            <button class="primary" onclick="copyForDzen()"><i class="ph ph-copy"></i><span class="btn-text" data-key="copy">Копия</span></button>
         </div>
     </header>
     <div class="controls">
@@ -74,7 +73,7 @@
     </main>
     <footer>
         <div id="stats">Chars: 0 | Words: 0</div>
-        <div><a href="https://dzen.ru/clickhack" target="_blank" data-key="channel">КликХак на Дзене</a></div>
+        <div id="readTime">Time: <b>0m</b></div>
     </footer>
 </div>
 
@@ -85,37 +84,31 @@
     let synth = window.speechSynthesis;
     let isSpeaking = false;
 
-    // --- Локализация ---
     const i18n = {
-        ru: {
-            speak: "Голос", stop: "Стоп", copy: "Копия", tabEdit: "ТЕКСТ", tabView: "ПРЕВЬЮ",
-            channel: "КликХак на Дзене", clearMsg: "Очистить?", toastCopy: "Скопировано для Дзена!",
-            placeholder: "Начни писать новость здесь..."
-        },
-        en: {
-            speak: "Speak", stop: "Stop", copy: "Copy", tabEdit: "EDIT", tabView: "VIEW",
-            channel: "Visit Channel", clearMsg: "Clear all?", toastCopy: "Copied to clipboard!",
-            placeholder: "Start typing your news here..."
-        }
+        ru: { speak: "Голос", stop: "Стоп", copy: "Копия", tabEdit: "ТЕКСТ", tabView: "ПРЕВЬЮ", time: "Время: ", clearMsg: "Очистить?", toastCopy: "Скопировано!", placeholder: "Начни писать..." },
+        en: { speak: "Speak", stop: "Stop", copy: "Copy", tabEdit: "EDIT", tabView: "VIEW", time: "Read time: ", clearMsg: "Clear all?", toastCopy: "Copied!", placeholder: "Start typing..." }
     };
 
     const userLang = navigator.language.startsWith('ru') ? 'ru' : 'en';
-    document.documentElement.lang = userLang;
     
     function applyLang() {
         const t = i18n[userLang];
-        document.querySelectorAll('[data-key]').forEach(el => {
-            el.innerText = t[el.getAttribute('data-key')];
-        });
+        document.querySelectorAll('[data-key]').forEach(el => el.innerText = t[el.getAttribute('data-key')]);
         editor.placeholder = t.placeholder;
     }
 
     marked.setOptions({ gfm: true, breaks: true });
 
     function update() {
-        preview.innerHTML = marked.parse(editor.value);
-        document.getElementById('stats').innerText = `Chars: ${editor.value.length} | Words: ${editor.value.trim() ? editor.value.trim().split(/\s+/).length : 0}`;
-        localStorage.setItem('kh_universal_draft', editor.value);
+        const text = editor.value;
+        preview.innerHTML = marked.parse(text);
+        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+        const time = Math.ceil(words / 180);
+        
+        document.getElementById('stats').innerText = `Chars: ${text.length} | Words: ${words}`;
+        document.getElementById('readTime').innerHTML = `${i18n[userLang].time}<b>${time}m</b>`;
+        
+        localStorage.setItem('kh_pure_draft', text);
     }
 
     function setMode(mode) {
@@ -130,43 +123,41 @@
             cb.insertAdjacentHTML('afterend', cb.checked ? '✅ ' : '⬜ ');
             cb.remove();
         });
-
         const container = document.createElement('div');
         container.style.cssText = "position:fixed;left:-9999px;opacity:0;white-space:pre-wrap;";
         container.innerHTML = clone.innerHTML;
         document.body.appendChild(container);
-
         const range = document.createRange();
         range.selectNodeContents(container);
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
-
-        try {
-            document.execCommand('copy');
-            showToast(i18n[userLang].toastCopy);
-        } catch (err) { showToast('Error'); }
-
+        document.execCommand('copy');
         selection.removeAllRanges();
         document.body.removeChild(container);
+        showToast(i18n[userLang].toastCopy);
     }
 
     function toggleSpeech() {
-        if (isSpeaking) { synth.cancel(); isSpeaking = false; document.getElementById('btnSpeak').querySelector('.btn-text').innerText = i18n[userLang].speak; }
-        else {
-            if(!editor.value) return;
+        const btnText = document.getElementById('btnSpeak').querySelector('.btn-text');
+        
+        if (isSpeaking) {
+            synth.cancel();
+            isSpeaking = false;
+            btnText.innerText = i18n[userLang].speak;
+        } else {
+            if (!editor.value.trim()) return;
+            synth.cancel(); // Сброс перед стартом
+            
             const ut = new SpeechSynthesisUtterance(editor.value);
-            ut.rate = parseFloat(speedInput.value);
-            // Авто-детект языка для голоса
-            ut.lang = navigator.language || 'ru-RU';
+            ut.lang = userLang === 'ru' ? 'ru-RU' : 'en-US';
+            ut.rate = parseFloat(speedInput.value) || 1.0;
             
-            ut.onend = () => { isSpeaking = false; toggleSpeech(); };
-            const voices = synth.getVoices();
-            const voice = voices.find(v => v.lang.includes(userLang));
-            if(voice) ut.voice = voice;
+            ut.onstart = () => { isSpeaking = true; btnText.innerText = i18n[userLang].stop; };
+            ut.onend = () => { isSpeaking = false; btnText.innerText = i18n[userLang].speak; };
+            ut.onerror = () => { isSpeaking = false; btnText.innerText = i18n[userLang].speak; };
             
-            synth.speak(ut); isSpeaking = true;
-            document.getElementById('btnSpeak').querySelector('.btn-text').innerText = i18n[userLang].stop;
+            synth.speak(ut);
         }
     }
 
@@ -176,9 +167,9 @@
     editor.addEventListener('input', update);
     window.onload = () => { 
         applyLang();
-        editor.value = localStorage.getItem('kh_universal_draft') || ''; 
+        editor.value = localStorage.getItem('kh_pure_draft') || ''; 
         update();
-        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = () => synth.getVoices();
+        synth.cancel(); // Очистка при загрузке
     };
 </script>
 </body>
