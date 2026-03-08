@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <title>ClickHack | Studio</title>
+    <title>ClickHack | Studio Pro</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#09090b">
@@ -81,8 +81,11 @@
     const editor = document.getElementById('editor');
     const preview = document.getElementById('preview');
     const speedInput = document.getElementById('speed');
+    const btnSpeakText = document.getElementById('btnSpeak').querySelector('.btn-text');
     let synth = window.speechSynthesis;
     let isSpeaking = false;
+    let speechQueue = [];
+    let currentChunkIndex = 0;
 
     const i18n = {
         ru: { speak: "Голос", stop: "Стоп", copy: "Копия", tabEdit: "ТЕКСТ", tabView: "ПРЕВЬЮ", time: "Время: ", clearMsg: "Очистить?", toastCopy: "Скопировано!", placeholder: "Начни писать..." },
@@ -90,7 +93,7 @@
     };
 
     const userLang = navigator.language.startsWith('ru') ? 'ru' : 'en';
-    
+
     function applyLang() {
         const t = i18n[userLang];
         document.querySelectorAll('[data-key]').forEach(el => el.innerText = t[el.getAttribute('data-key')]);
@@ -104,11 +107,9 @@
         preview.innerHTML = marked.parse(text);
         const words = text.trim() ? text.trim().split(/\s+/).length : 0;
         const time = Math.ceil(words / 180);
-        
         document.getElementById('stats').innerText = `Chars: ${text.length} | Words: ${words}`;
         document.getElementById('readTime').innerHTML = `${i18n[userLang].time}<b>${time}m</b>`;
-        
-        localStorage.setItem('kh_pure_draft', text);
+        localStorage.setItem('kh_v5_draft', text);
     }
 
     function setMode(mode) {
@@ -138,27 +139,56 @@
         showToast(i18n[userLang].toastCopy);
     }
 
+    // --- УЛУЧШЕННАЯ ОЗВУЧКА С ОЧЕРЕДЬЮ (V5.0) ---
     function toggleSpeech() {
-        const btnText = document.getElementById('btnSpeak').querySelector('.btn-text');
-        
         if (isSpeaking) {
-            synth.cancel();
-            isSpeaking = false;
-            btnText.innerText = i18n[userLang].speak;
+            stopSpeech();
         } else {
-            if (!editor.value.trim()) return;
-            synth.cancel(); // Сброс перед стартом
-            
-            const ut = new SpeechSynthesisUtterance(editor.value);
-            ut.lang = userLang === 'ru' ? 'ru-RU' : 'en-US';
-            ut.rate = parseFloat(speedInput.value) || 1.0;
-            
-            ut.onstart = () => { isSpeaking = true; btnText.innerText = i18n[userLang].stop; };
-            ut.onend = () => { isSpeaking = false; btnText.innerText = i18n[userLang].speak; };
-            ut.onerror = () => { isSpeaking = false; btnText.innerText = i18n[userLang].speak; };
-            
-            synth.speak(ut);
+            startSpeech();
         }
+    }
+
+    function startSpeech() {
+        const text = editor.value.trim();
+        if (!text) return;
+
+        synth.cancel();
+        isSpeaking = true;
+        btnSpeakText.innerText = i18n[userLang].stop;
+
+        // Разбиваем текст на куски по предложениям (до 400 символов)
+        speechQueue = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+        currentChunkIndex = 0;
+        
+        speakNextChunk();
+    }
+
+    function speakNextChunk() {
+        if (!isSpeaking || currentChunkIndex >= speechQueue.length) {
+            stopSpeech();
+            return;
+        }
+
+        const ut = new SpeechSynthesisUtterance(speechQueue[currentChunkIndex]);
+        ut.lang = userLang === 'ru' ? 'ru-RU' : 'en-US';
+        ut.rate = parseFloat(speedInput.value) || 1.0;
+
+        ut.onend = () => {
+            currentChunkIndex++;
+            speakNextChunk();
+        };
+
+        ut.onerror = () => stopSpeech();
+
+        synth.speak(ut);
+    }
+
+    function stopSpeech() {
+        synth.cancel();
+        isSpeaking = false;
+        speechQueue = [];
+        currentChunkIndex = 0;
+        btnSpeakText.innerText = i18n[userLang].speak;
     }
 
     function clearText() { if(confirm(i18n[userLang].clearMsg)) { editor.value = ''; update(); } }
@@ -167,9 +197,9 @@
     editor.addEventListener('input', update);
     window.onload = () => { 
         applyLang();
-        editor.value = localStorage.getItem('kh_pure_draft') || ''; 
+        editor.value = localStorage.getItem('kh_v5_draft') || ''; 
         update();
-        synth.cancel(); // Очистка при загрузке
+        synth.cancel();
     };
 </script>
 </body>
