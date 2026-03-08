@@ -1,4 +1,4 @@
-# ⚡️ ClickHack Studio (Carbon v4.1)
+# ⚡️ ClickHack Studio 
 
 A simple and clean Markdown editor for content creators. Designed to prepare posts for platforms like Zen, VC.ru, Habr, and personal blogs.
 
@@ -23,7 +23,7 @@ A simple and clean Markdown editor for content creators. Designed to prepare pos
 ---
 
 <a name="russian"></a>
-# ⚡️ КликХак Студия (Carbon v4.1)
+# ⚡️ КликХак Студия 
 
 Простой и чистый редактор для подготовки постов в Дзен, ВК, Хабр или на свои сайты.
 
