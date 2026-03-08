@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <title>КликХак | Яндекс Дзен</title>
+    <title>ClickHack | Universal Studio</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#09090b">
@@ -45,9 +45,8 @@
         .preview table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
         .preview th, .preview td { border: 1px solid #3f3f46; padding: 0.75rem; text-align: left; }
         .preview th { background: #27272a; }
-        .preview blockquote { border-left: 4px solid var(--accent); padding-left: 1rem; margin: 1.5rem 0; font-style: italic; color: var(--mut); }
-        .preview code { background: #27272a; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Geist Mono'; color: var(--accent); }
         footer { display: flex; justify-content: space-between; padding: 0.4rem 0.75rem; background: var(--panel); border-radius: 0.75rem; border: 1px solid var(--border); font-size: 0.7rem; color: var(--mut); }
+        footer a { color: var(--accent); text-decoration: none; font-weight: bold; }
         .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--ink); color: #000; padding: 0.6rem 1.2rem; border-radius: 2rem; font-weight: 700; font-size: 0.8rem; z-index: 1000; }
         @media (max-width: 500px) { .btn-text { display: none; } }
     </style>
@@ -55,20 +54,30 @@
 <body>
 <div class="app">
     <header>
-        <div class="logo">CLICK<span>HACK</span>(MD⇌HTML)</div>
+        <div class="logo">CLICK<span>HACK</span></div>
         <div class="btn-group">
             <button onclick="clearText()"><i class="ph ph-trash"></i></button>
-            <button id="btnSpeak" onclick="toggleSpeech()" class="primary"><i class="ph ph-speaker-high"></i><span class="btn-text">Voice</span></button>
-            <button class="primary" onclick="copyForDzen()"><i class="ph ph-copy"></i><span class="btn-text">Copy</span></button>
+            <button id="btnSpeak" onclick="toggleSpeech()" class="primary"><i class="ph ph-speaker-high"></i><span class="btn-text" data-key="speak">Голос</span></button>
+            <button id="btnCopy" class="primary" onclick="copyForDzen()"><i class="ph ph-copy"></i><span class="btn-text" data-key="copy">Копия</span></button>
         </div>
     </header>
     <div class="controls">
-        <div class="tabs"><div id="tabEditor" class="tab active" onclick="setMode('edit')">EDIT</div><div id="tabPreview" class="tab" onclick="setMode('view')">VIEW</div></div>
+        <div class="tabs">
+            <div id="tabEditor" class="tab active" onclick="setMode('edit')" data-key="tabEdit">EDIT</div>
+            <div id="tabPreview" class="tab" onclick="setMode('view')" data-key="tabView">VIEW</div>
+        </div>
         <div class="speed-panel"><i class="ph ph-gauge"></i><input type="range" id="speed" min="0.5" max="2.0" step="0.1" value="1.0"></div>
     </div>
-    <main class="main-view"><textarea id="editor" spellcheck="false" placeholder="Пиши здесь..."></textarea><div id="preview" class="preview"></div></main>
-    <footer><div id="stats">Chars: 0 | Words: 0</div><div><b>v4.6 Elite Engine</b></div></footer>
+    <main class="main-view">
+        <textarea id="editor" spellcheck="false"></textarea>
+        <div id="preview" class="preview"></div>
+    </main>
+    <footer>
+        <div id="stats">Chars: 0 | Words: 0</div>
+        <div><a href="https://dzen.ru/clickhack" target="_blank" data-key="channel">КликХак на Дзене</a></div>
+    </footer>
 </div>
+
 <script>
     const editor = document.getElementById('editor');
     const preview = document.getElementById('preview');
@@ -76,12 +85,37 @@
     let synth = window.speechSynthesis;
     let isSpeaking = false;
 
+    // --- Локализация ---
+    const i18n = {
+        ru: {
+            speak: "Голос", stop: "Стоп", copy: "Копия", tabEdit: "ТЕКСТ", tabView: "ПРЕВЬЮ",
+            channel: "КликХак на Дзене", clearMsg: "Очистить?", toastCopy: "Скопировано для Дзена!",
+            placeholder: "Начни писать новость здесь..."
+        },
+        en: {
+            speak: "Speak", stop: "Stop", copy: "Copy", tabEdit: "EDIT", tabView: "VIEW",
+            channel: "Visit Channel", clearMsg: "Clear all?", toastCopy: "Copied to clipboard!",
+            placeholder: "Start typing your news here..."
+        }
+    };
+
+    const userLang = navigator.language.startsWith('ru') ? 'ru' : 'en';
+    document.documentElement.lang = userLang;
+    
+    function applyLang() {
+        const t = i18n[userLang];
+        document.querySelectorAll('[data-key]').forEach(el => {
+            el.innerText = t[el.getAttribute('data-key')];
+        });
+        editor.placeholder = t.placeholder;
+    }
+
     marked.setOptions({ gfm: true, breaks: true });
 
     function update() {
         preview.innerHTML = marked.parse(editor.value);
         document.getElementById('stats').innerText = `Chars: ${editor.value.length} | Words: ${editor.value.trim() ? editor.value.trim().split(/\s+/).length : 0}`;
-        localStorage.setItem('kh_elite_draft', editor.value);
+        localStorage.setItem('kh_universal_draft', editor.value);
     }
 
     function setMode(mode) {
@@ -91,16 +125,12 @@
 
     async function copyForDzen() {
         update();
-        // Создаем клон для манипуляций перед копированием
         const clone = preview.cloneNode(true);
-        
-        // Магия: заменяем инпуты на текст, чтобы они копировались
         clone.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             cb.insertAdjacentHTML('afterend', cb.checked ? '✅ ' : '⬜ ');
             cb.remove();
         });
 
-        // Создаем невидимый контейнер для чистого захвата HTML
         const container = document.createElement('div');
         container.style.cssText = "position:fixed;left:-9999px;opacity:0;white-space:pre-wrap;";
         container.innerHTML = clone.innerHTML;
@@ -114,33 +144,42 @@
 
         try {
             document.execCommand('copy');
-            showToast('Текст, таблицы и чекбоксы скопированы!');
-        } catch (err) {
-            showToast('Ошибка копирования');
-        }
+            showToast(i18n[userLang].toastCopy);
+        } catch (err) { showToast('Error'); }
 
-        selection.removeAllRanges(); // УБИРАЕМ ВЫДЕЛЕНИЕ (фикс красного фона)
+        selection.removeAllRanges();
         document.body.removeChild(container);
     }
 
     function toggleSpeech() {
-        if (isSpeaking) { synth.cancel(); isSpeaking = false; document.getElementById('btnSpeak').innerHTML = '<i class="ph ph-speaker-high"></i><span class="btn-text">Голос</span>'; }
+        if (isSpeaking) { synth.cancel(); isSpeaking = false; document.getElementById('btnSpeak').querySelector('.btn-text').innerText = i18n[userLang].speak; }
         else {
+            if(!editor.value) return;
             const ut = new SpeechSynthesisUtterance(editor.value);
-            ut.rate = parseFloat(speedInput.value); ut.lang = 'ru-RU';
+            ut.rate = parseFloat(speedInput.value);
+            // Авто-детект языка для голоса
+            ut.lang = navigator.language || 'ru-RU';
+            
             ut.onend = () => { isSpeaking = false; toggleSpeech(); };
             const voices = synth.getVoices();
-            const ruVoice = voices.find(v => v.lang.includes('ru'));
-            if(ruVoice) ut.voice = ruVoice;
+            const voice = voices.find(v => v.lang.includes(userLang));
+            if(voice) ut.voice = voice;
+            
             synth.speak(ut); isSpeaking = true;
-            document.getElementById('btnSpeak').innerHTML = '<i class="ph ph-stop-circle"></i><span class="btn-text">Стоп</span>';
+            document.getElementById('btnSpeak').querySelector('.btn-text').innerText = i18n[userLang].stop;
         }
     }
 
-    function clearText() { if(confirm("Очистить?")) { editor.value = ''; update(); } }
+    function clearText() { if(confirm(i18n[userLang].clearMsg)) { editor.value = ''; update(); } }
     function showToast(m) { const t = document.createElement('div'); t.className = 'toast'; t.innerText = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
+    
     editor.addEventListener('input', update);
-    window.onload = () => { editor.value = localStorage.getItem('kh_elite_draft') || ''; update(); };
+    window.onload = () => { 
+        applyLang();
+        editor.value = localStorage.getItem('kh_universal_draft') || ''; 
+        update();
+        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = () => synth.getVoices();
+    };
 </script>
 </body>
 </html>
