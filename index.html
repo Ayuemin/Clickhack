@@ -3,162 +3,72 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <title>КликХак | Carbon Studio</title>
+    <title>КликХак Студия</title>
     
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#09090b">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="КликХак">
+    <link rel="icon" type="image/png" href="ic_launcher.png">
+    <link rel="apple-touch-icon" href="ic_launcher.png">
     
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&f[]=geist-mono@400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
     <style>
-        :root {
-            --bg: #09090b; --panel: #121214; --border: #27272a;
-            --ink: #fafafa; --mut: #71717a; --accent: #3b82f6; --radius: 1rem;
-        }
-
+        :root { --bg: #09090b; --panel: #121214; --border: #27272a; --ink: #fafafa; --mut: #71717a; --accent: #3b82f6; --radius: 1rem; }
         * { box-sizing: border-box; -webkit-font-smoothing: antialiased; outline: none; }
-        
-        body { 
-            margin: 0; background: var(--bg); color: var(--ink); 
-            font-family: 'Satoshi', sans-serif; height: 100dvh; 
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-
-        .app {
-            max-width: 1000px; width: 100%; margin: 0 auto;
-            display: flex; flex-direction: column; height: 100%; padding: 0.5rem; gap: 0.5rem;
-        }
-
-        /* --- Header --- */
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.25rem 0.5rem; flex-shrink: 0;
-        }
+        body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Satoshi', sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .app { max-width: 800px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; height: 100%; padding: 0.5rem; gap: 0.5rem; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0.5rem; flex-shrink: 0; }
         .logo { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.04em; }
         .logo span { color: var(--accent); }
-
         .btn-group { display: flex; gap: 0.35rem; }
-        
-        button {
-            display: flex; align-items: center; justify-content: center;
-            padding: 0.5rem 0.8rem; border-radius: 0.6rem; border: 1px solid var(--border);
-            background: var(--panel); color: var(--ink); cursor: pointer;
-            transition: all 0.1s ease; font-family: inherit;
-        }
+        button { display: flex; align-items: center; justify-content: center; padding: 0.5rem 0.8rem; border-radius: 0.6rem; border: 1px solid var(--border); background: var(--panel); color: var(--ink); cursor: pointer; transition: 0.1s ease; font-family: inherit; }
         button:active { transform: scale(0.95); }
         button.primary { background: var(--accent); border-color: var(--accent); }
-        .btn-text { font-size: 0.75rem; margin-left: 0.4rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-
-        /* --- Controls --- */
-        .controls {
-            display: grid; grid-template-columns: 140px 1fr; gap: 0.5rem; align-items: center;
-        }
-
-        .tabs {
-            display: flex; background: var(--panel); border: 1px solid var(--border);
-            padding: 0.2rem; border-radius: 0.75rem;
-        }
-        .tab {
-            flex: 1; padding: 0.4rem; text-align: center; font-size: 0.7rem;
-            font-weight: 800; border-radius: 0.5rem; cursor: pointer; color: var(--mut);
-        }
+        .btn-text { font-size: 0.75rem; margin-left: 0.4rem; font-weight: 700; text-transform: uppercase; }
+        .controls { display: grid; grid-template-columns: 140px 1fr; gap: 0.5rem; align-items: center; }
+        .tabs { display: flex; background: var(--panel); border: 1px solid var(--border); padding: 0.2rem; border-radius: 0.75rem; }
+        .tab { flex: 1; padding: 0.4rem; text-align: center; font-size: 0.7rem; font-weight: 800; border-radius: 0.5rem; cursor: pointer; color: var(--mut); }
         .tab.active { background: var(--border); color: var(--ink); }
-
-        .speed-panel {
-            display: flex; align-items: center; gap: 0.75rem; 
-            background: var(--panel); border: 1px solid var(--border);
-            padding: 0 0.75rem; height: 32px; border-radius: 0.75rem;
-        }
+        .speed-panel { display: flex; align-items: center; gap: 0.75rem; background: var(--panel); border: 1px solid var(--border); padding: 0 0.75rem; height: 32px; border-radius: 0.75rem; }
         input[type="range"] { flex: 1; accent-color: var(--accent); cursor: pointer; }
-
-        /* --- Main --- */
-        .main-view {
-            flex-grow: 1; background: var(--panel); border: 1px solid var(--border);
-            border-radius: var(--radius); overflow: hidden; position: relative;
-        }
-
-        textarea, .preview {
-            width: 100%; height: 100%; padding: 1.25rem;
-            border: none; background: transparent; color: var(--ink);
-            line-height: 1.6; position: absolute; top: 0; left: 0;
-        }
-
-        textarea {
-            font-family: 'Geist Mono', monospace; font-size: 0.95rem; resize: none;
-            z-index: 10;
-        }
-
-        .preview {
-            z-index: 5; overflow-y: auto; display: none; background: var(--panel);
-        }
+        .main-view { flex-grow: 1; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; position: relative; }
+        textarea, .preview { width: 100%; height: 100%; padding: 1.25rem; border: none; background: transparent; color: var(--ink); line-height: 1.6; position: absolute; top: 0; left: 0; }
+        textarea { font-family: 'Geist Mono', monospace; font-size: 0.95rem; resize: none; z-index: 10; }
+        .preview { z-index: 5; overflow-y: auto; display: none; background: var(--panel); }
         .preview.active { display: block; z-index: 20; }
-
-        /* Typography для Дзена */
-        .preview h1 { font-size: 1.7rem; margin: 0 0 1rem 0; color: #fff; line-height: 1.2; }
-        .preview h2 { font-size: 1.4rem; margin: 1.5rem 0 0.8rem 0; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+        .preview h1 { font-size: 1.7rem; margin: 0 0 1rem 0; color: #fff; }
+        .preview h2 { font-size: 1.4rem; margin: 1.5rem 0 0.8rem 0; color: #fff; border-bottom: 1px solid var(--border); }
         .preview b { color: var(--accent); font-weight: 700; }
-        .preview a { color: var(--accent); text-decoration: underline; }
-        .preview hr { border: none; border-top: 2px solid var(--border); margin: 1.5rem 0; }
-        .preview blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--mut); margin: 1.5rem 0; font-style: italic; }
-        .preview ul { padding-left: 1.2rem; margin: 1rem 0; }
-        .preview li { margin-bottom: 0.5rem; }
-        .preview code { background: #27272a; padding: 0.1rem 0.3rem; border-radius: 4px; font-family: 'Geist Mono'; font-size: 0.9em; }
-
-        footer {
-            display: flex; justify-content: space-between; padding: 0.4rem 0.75rem;
-            background: var(--panel); border-radius: 0.75rem; border: 1px solid var(--border);
-            font-size: 0.7rem; color: var(--mut);
-        }
+        .preview blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--mut); margin: 1.5rem 0; }
+        .preview ul { padding-left: 1.2rem; }
+        footer { display: flex; justify-content: space-between; padding: 0.4rem 0.75rem; background: var(--panel); border-radius: 0.75rem; border: 1px solid var(--border); font-size: 0.7rem; color: var(--mut); }
         footer b { color: var(--accent); font-family: 'Geist Mono'; }
-
-        .toast {
-            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
-            background: var(--ink); color: #000; padding: 0.6rem 1.2rem;
-            border-radius: 2rem; font-weight: 700; font-size: 0.8rem; z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        
+        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--ink); color: #000; padding: 0.6rem 1.2rem; border-radius: 2rem; font-weight: 700; font-size: 0.8rem; z-index: 1000; }
         @media (max-width: 500px) { .btn-text { display: none; } }
     </style>
 </head>
 <body>
-
 <div class="app">
     <header>
-        <div class="logo">КЛИК<span>ХАК</span>.V4</div>
+        <div class="logo">КЛИК<span>ХАК</span></div>
         <div class="btn-group">
             <button onclick="clearText()"><i class="ph ph-trash"></i></button>
             <button id="btnSpeak" onclick="toggleSpeech()" class="primary"><i class="ph ph-speaker-high"></i><span class="btn-text">Озвучить</span></button>
             <button class="primary" onclick="copyForDzen()"><i class="ph ph-copy"></i><span class="btn-text">Дзен</span></button>
         </div>
     </header>
-
     <div class="controls">
-        <div class="tabs">
-            <div id="tabEditor" class="tab active" onclick="setMode('edit')">TEXT</div>
-            <div id="tabPreview" class="tab" onclick="setMode('view')">VIEW</div>
-        </div>
-        <div class="speed-panel">
-            <i class="ph ph-gauge"></i>
-            <input type="range" id="speed" min="0.5" max="2.0" step="0.1" value="1.0">
-        </div>
+        <div class="tabs"><div id="tabEditor" class="tab active" onclick="setMode('edit')">TEXT</div><div id="tabPreview" class="tab" onclick="setMode('view')">VIEW</div></div>
+        <div class="speed-panel"><i class="ph ph-gauge"></i><input type="range" id="speed" min="0.5" max="2.0" step="0.1" value="1.0"></div>
     </div>
-
-    <main class="main-view">
-        <textarea id="editor" spellcheck="false" placeholder="Markdown текст..."></textarea>
-        <div id="preview" class="preview"></div>
-    </main>
-
-    <footer>
-        <div class="stats">
-            Chars: <b id="statChars">0</b> &nbsp; Words: <b id="statWords">0</b> &nbsp; Read: <b id="statTime">0</b>m
-        </div>
-        <div>Engine <b>v4.0 Carbon</b></div>
-    </footer>
+    <main class="main-view"><textarea id="editor" spellcheck="false" placeholder="Пиши здесь..."></textarea><div id="preview" class="preview"></div></main>
+    <footer><div class="stats">Chars: <b id="statChars">0</b> &nbsp; Words: <b id="statWords">0</b></div><div><b>v4.1 Carbon</b></div></footer>
 </div>
-
 <script>
     const editor = document.getElementById('editor');
     const preview = document.getElementById('preview');
@@ -166,120 +76,57 @@
     let synth = window.speechSynthesis;
     let isSpeaking = false;
 
-    // --- High-Agency Parser ---
     function render(md, clean = false) {
-        if(!md) return clean ? '' : '<p style="color: #52525b">Превью появится здесь...</p>';
-        
-        let res = md
-            .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-            .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-            .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-            .replace(/^(\*{3,}|-{3,}|_{3,})$/gm, '<hr>')
-            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
-            .replace(/`(.*?)`/g, '<code>$1</code>')
-            .replace(/^\> (.*$)/gm, '<blockquote>$1</blockquote>')
-            .replace(/^[-*+]\s+(.*)$/gm, '<li>$1</li>');
-
-        res = res.replace(/(<li>.*?<\/li>)/gs, (match) => `<ul>${match}</ul>`);
-        res = res.replace(/<\/ul>\n?<ul>/g, ''); 
-
-        if (clean) {
-            res = res.replace(/\n?<(h1|h2|h3|ul|li|blockquote|hr|br)/g, '<$1');
-            res = res.replace(/<\/(h1|h2|h3|ul|li|blockquote|hr)>\n?/g, '</$1>');
-        }
-
-        return res.split('\n').map(line => {
-            if (line.match(/<(h1|h2|h3|ul|li|blockquote|hr)/)) return line;
-            return line + (line ? '<br>' : '');
-        }).join('').replace(/(<br>)+$/g, '');
+        if(!md) return '';
+        let res = md.replace(/^# (.*$)/gm, '<h1>$1</h1>').replace(/^## (.*$)/gm, '<h2>$1</h2>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>').replace(/^\> (.*$)/gm, '<blockquote>$1</blockquote>').replace(/^[-*+]\s+(.*)$/gm, '<li>$1</li>');
+        res = res.replace(/(<li>.*?<\/li>)/gs, (match) => `<ul>${match}</ul>`).replace(/<\/ul>\n?<ul>/g, '');
+        if (clean) { res = res.replace(/\n?<(h1|h2|h3|ul|li|blockquote|hr|br)/g, '<$1').replace(/<\/(h1|h2|h3|ul|li|blockquote|hr)>\n?/g, '</$1>'); }
+        return res.split('\n').map(line => line.match(/<(h1|h2|h3|ul|li|blockquote|hr)/) ? line : line + (line ? '<br>' : '')).join('').replace(/(<br>)+$/g, '');
     }
 
     function update() {
-        const text = editor.value;
-        preview.innerHTML = render(text, false);
-        
-        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-        document.getElementById('statChars').innerText = text.length;
-        document.getElementById('statWords').innerText = words;
-        document.getElementById('statTime').innerText = Math.ceil(words / 180);
-        
-        localStorage.setItem('kh_carbon_draft', text);
+        preview.innerHTML = render(editor.value, false);
+        document.getElementById('statChars').innerText = editor.value.length;
+        document.getElementById('statWords').innerText = editor.value.trim() ? editor.value.trim().split(/\s+/).length : 0;
+        localStorage.setItem('kh_carbon_draft', editor.value);
     }
 
     function setMode(mode) {
-        if(mode === 'view') {
-            update();
-            preview.classList.add('active');
-            document.getElementById('tabPreview').classList.add('active');
-            document.getElementById('tabEditor').classList.remove('active');
-        } else {
-            preview.classList.remove('active');
-            document.getElementById('tabEditor').classList.add('active');
-            document.getElementById('tabPreview').classList.remove('active');
-        }
+        if(mode === 'view') { update(); preview.classList.add('active'); document.getElementById('tabPreview').classList.add('active'); document.getElementById('tabEditor').classList.remove('active'); }
+        else { preview.classList.remove('active'); document.getElementById('tabEditor').classList.add('active'); document.getElementById('tabPreview').classList.remove('active'); }
     }
 
-    // --- Pro Copy for Dzen ---
     async function copyForDzen() {
         const cleanHtml = render(editor.value, true);
-        
-        try {
-            const container = document.createElement('div');
-            container.innerHTML = cleanHtml;
-            container.style.position = 'fixed'; container.style.left = '-9999px';
-            document.body.appendChild(container);
-
-            const range = document.createRange();
-            range.selectNodeContents(container);
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-
-            if(document.execCommand('copy')) {
-                showToast('Готово для Дзена!');
-            }
-            document.body.removeChild(container);
-        } catch (err) {
-            showToast('Ошибка. Попробуй из режима VIEW');
-        }
+        const container = document.createElement('div');
+        container.innerHTML = cleanHtml;
+        container.style.position = 'fixed'; container.style.left = '-9999px';
+        document.body.appendChild(container);
+        const range = document.createRange(); range.selectNodeContents(container);
+        window.getSelection().removeAllRanges(); window.getSelection().addRange(range);
+        document.execCommand('copy');
+        document.body.removeChild(container);
+        showToast('Готово для Дзена!');
     }
 
-    // --- Speech Synthesis ---
     function toggleSpeech() {
-        if (isSpeaking) {
-            synth.cancel(); isSpeaking = false;
-            document.getElementById('btnSpeak').innerHTML = '<i class="ph ph-speaker-high"></i><span class="btn-text">Озвучить</span>';
-        } else {
-            if(!editor.value) return;
+        if (isSpeaking) { synth.cancel(); isSpeaking = false; document.getElementById('btnSpeak').innerHTML = '<i class="ph ph-speaker-high"></i><span class="btn-text">Озвучить</span>'; }
+        else {
             const ut = new SpeechSynthesisUtterance(editor.value);
-            ut.rate = parseFloat(speedInput.value);
-            ut.lang = 'ru-RU';
+            ut.rate = parseFloat(speedInput.value); ut.lang = 'ru-RU';
             ut.onend = () => { isSpeaking = false; toggleSpeech(); };
-            
-            // Пытаемся найти русский голос
             const voices = synth.getVoices();
             const ruVoice = voices.find(v => v.lang.includes('ru'));
             if(ruVoice) ut.voice = ruVoice;
-            
-            synth.speak(ut);
-            isSpeaking = true;
+            synth.speak(ut); isSpeaking = true;
             document.getElementById('btnSpeak').innerHTML = '<i class="ph ph-stop-circle"></i><span class="btn-text">Стоп</span>';
         }
     }
 
     function clearText() { if(confirm("Очистить?")) { editor.value = ''; update(); } }
-    function showToast(m) {
-        const t = document.createElement('div'); t.className = 'toast'; t.innerText = m;
-        document.body.appendChild(t); setTimeout(() => t.remove(), 2500);
-    }
-
+    function showToast(m) { const t = document.createElement('div'); t.className = 'toast'; t.innerText = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
     editor.addEventListener('input', update);
-    window.onload = () => {
-        editor.value = localStorage.getItem('kh_carbon_draft') || '';
-        update();
-        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = () => synth.getVoices();
-    };
+    window.onload = () => { editor.value = localStorage.getItem('kh_carbon_draft') || ''; update(); };
 </script>
 </body>
 </html>
