@@ -42,4 +42,4 @@ A simple and clean Markdown editor for content creators. Designed to prepare pos
 * `> Цитата`
 
 ---
-Made for **[ClickHack (КликХак)](https://dzen.ru/clickhack)** channel.
+Made for ClickHack (КликХак) channel on Yandex Zen
