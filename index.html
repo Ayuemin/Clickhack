@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <title>ClickHack | Studio Pro</title>
+    <title>ClickHack | Studio</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#09090b">
@@ -56,7 +56,7 @@
         <div class="logo">CLICK<span>HACK</span></div>
         <div class="btn-group">
             <button onclick="clearText()"><i class="ph ph-trash"></i></button>
-            <button id="btnSpeak" onclick="toggleSpeech()" class="primary"><i class="ph ph-speaker-high"></i><span class="btn-text" data-key="speak">Голос</span></button>
+            <button id="btnSpeak" onclick="toggleSpeech()" class="primary"><i id="iconSpeak" class="ph ph-speaker-high"></i><span class="btn-text" data-key="speak">Голос</span></button>
             <button class="primary" onclick="copyForDzen()"><i class="ph ph-copy"></i><span class="btn-text" data-key="copy">Копия</span></button>
         </div>
     </header>
@@ -82,6 +82,7 @@
     const preview = document.getElementById('preview');
     const speedInput = document.getElementById('speed');
     const btnSpeakText = document.getElementById('btnSpeak').querySelector('.btn-text');
+    const iconSpeak = document.getElementById('iconSpeak');
     let synth = window.speechSynthesis;
     let isSpeaking = false;
     let speechQueue = [];
@@ -109,7 +110,7 @@
         const time = Math.ceil(words / 180);
         document.getElementById('stats').innerText = `Chars: ${text.length} | Words: ${words}`;
         document.getElementById('readTime').innerHTML = `${i18n[userLang].time}<b>${time}m</b>`;
-        localStorage.setItem('kh_v5_draft', text);
+        localStorage.setItem('kh_v52_draft', text);
     }
 
     function setMode(mode) {
@@ -117,49 +118,71 @@
         else { preview.classList.remove('active'); document.getElementById('tabEditor').classList.add('active'); document.getElementById('tabPreview').classList.remove('active'); }
     }
 
+    // --- ФИКС ДЛЯ ДЗЕНА (АГРЕССИВНАЯ МИНИФИКАЦИЯ) ---
     async function copyForDzen() {
         update();
-        const clone = preview.cloneNode(true);
-        clone.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        const rawHtml = marked.parse(editor.value);
+        const tempCleaner = document.createElement('div');
+        tempCleaner.innerHTML = rawHtml;
+
+        // Удаляем <p> внутри <li>
+        tempCleaner.querySelectorAll('li > p').forEach(p => {
+            p.insertAdjacentHTML('beforebegin', p.innerHTML);
+            p.remove();
+        });
+
+        // Чекбоксы в эмодзи
+        tempCleaner.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             cb.insertAdjacentHTML('afterend', cb.checked ? '✅ ' : '⬜ ');
             cb.remove();
         });
+
+        // УДАЛЯЕМ ВСЕ ПРОБЕЛЫ И ПЕРЕНОСЫ МЕЖДУ ТЕГАМИ (Минификация)
+        let cleanHtml = tempCleaner.innerHTML.replace(/>\s+</g, '><').trim();
+
         const container = document.createElement('div');
-        container.style.cssText = "position:fixed;left:-9999px;opacity:0;white-space:pre-wrap;";
-        container.innerHTML = clone.innerHTML;
+        // Ставим прозрачность 0 и убираем pre-wrap
+        container.style.cssText = "position:fixed;left:-9999px;opacity:0;";
+        container.innerHTML = cleanHtml;
         document.body.appendChild(container);
+
         const range = document.createRange();
         range.selectNodeContents(container);
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
+
         document.execCommand('copy');
         selection.removeAllRanges();
         document.body.removeChild(container);
         showToast(i18n[userLang].toastCopy);
     }
 
-    // --- УЛУЧШЕННАЯ ОЗВУЧКА С ОЧЕРЕДЬЮ (V5.0) ---
+    // --- ОЗВУЧКА С СИНХРОНИЗАЦИЕЙ ---
     function toggleSpeech() {
-        if (isSpeaking) {
-            stopSpeech();
+        if (isSpeaking) { stopSpeech(); } 
+        else { startSpeech(); }
+    }
+
+    function updateSpeechUI(speaking) {
+        isSpeaking = speaking;
+        if (speaking) {
+            btnSpeakText.innerText = i18n[userLang].stop;
+            iconSpeak.className = 'ph ph-stop-circle';
         } else {
-            startSpeech();
+            btnSpeakText.innerText = i18n[userLang].speak;
+            iconSpeak.className = 'ph ph-speaker-high';
         }
     }
 
     function startSpeech() {
         const text = editor.value.trim();
         if (!text) return;
-
         synth.cancel();
-        isSpeaking = true;
-        btnSpeakText.innerText = i18n[userLang].stop;
-
-        // Разбиваем текст на куски по предложениям (до 400 символов)
+        updateSpeechUI(true);
+        // Разбиваем на предложения
         speechQueue = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
         currentChunkIndex = 0;
-        
         speakNextChunk();
     }
 
@@ -168,27 +191,19 @@
             stopSpeech();
             return;
         }
-
         const ut = new SpeechSynthesisUtterance(speechQueue[currentChunkIndex]);
         ut.lang = userLang === 'ru' ? 'ru-RU' : 'en-US';
         ut.rate = parseFloat(speedInput.value) || 1.0;
-
-        ut.onend = () => {
-            currentChunkIndex++;
-            speakNextChunk();
-        };
-
+        ut.onend = () => { currentChunkIndex++; speakNextChunk(); };
         ut.onerror = () => stopSpeech();
-
         synth.speak(ut);
     }
 
     function stopSpeech() {
         synth.cancel();
-        isSpeaking = false;
         speechQueue = [];
         currentChunkIndex = 0;
-        btnSpeakText.innerText = i18n[userLang].speak;
+        updateSpeechUI(false);
     }
 
     function clearText() { if(confirm(i18n[userLang].clearMsg)) { editor.value = ''; update(); } }
@@ -197,9 +212,8 @@
     editor.addEventListener('input', update);
     window.onload = () => { 
         applyLang();
-        editor.value = localStorage.getItem('kh_v5_draft') || ''; 
+        editor.value = localStorage.getItem('kh_v52_draft') || ''; 
         update();
-        synth.cancel();
     };
 </script>
 </body>
