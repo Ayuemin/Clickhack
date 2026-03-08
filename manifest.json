@@ -1,0 +1,12 @@
+{
+  "short_name": "КликХак",
+  "name": "КликХак Студия Carbon",
+  "icons": [
+    { "src": "ic_launcher.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "ic_launcher.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#09090b",
+  "background_color": "#09090b"
+}
