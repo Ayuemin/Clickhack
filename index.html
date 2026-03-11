@@ -103,13 +103,11 @@
 
     marked.setOptions({ gfm: true, breaks: true });
 
-    // Функция для автоматической очистки тире
     function cleanDashes(str) {
         return str.replace(/[—–]/g, '-');
     }
 
     function update() {
-        // Очищаем текст от длинных тире перед парсингом
         const text = cleanDashes(editor.value);
         preview.innerHTML = marked.parse(text);
         
@@ -117,7 +115,7 @@
         const time = Math.ceil(words / 180);
         document.getElementById('stats').innerText = `Chars: ${text.length} | Words: ${words}`;
         document.getElementById('readTime').innerHTML = `${i18n[userLang].time}<b>${time}m</b>`;
-        localStorage.setItem('kh_v53_draft', editor.value);
+        localStorage.setItem('kh_v54_draft', editor.value);
     }
 
     function setMode(mode) {
@@ -127,7 +125,6 @@
 
     async function copyForDzen() {
         update();
-        // Берем текст с уже замененными тире
         const textToProcess = cleanDashes(editor.value);
         const rawHtml = marked.parse(textToProcess);
         const tempCleaner = document.createElement('div');
@@ -162,6 +159,29 @@
         showToast(i18n[userLang].toastCopy);
     }
 
+    // --- НОВАЯ УМНАЯ ПОДГОТОВКА ТЕКСТА ДЛЯ ГОЛОСА ---
+    function getCleanTextForSpeech() {
+        const rawHtml = marked.parse(cleanDashes(editor.value));
+        const temp = document.createElement('div');
+        temp.innerHTML = rawHtml;
+        
+        // Находим все логические блоки
+        const blocks = temp.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, blockquote');
+        blocks.forEach(block => {
+            const txt = block.textContent.trim();
+            // Если в конце заголовка или пункта нет знака препинания - ставим невидимую точку для паузы
+            if (txt && !/[.!?…]$/.test(txt)) {
+                block.appendChild(document.createTextNode('.'));
+            }
+            // Добавляем пробел, чтобы слова из разных блоков не слипались
+            block.appendChild(document.createTextNode(' '));
+        });
+        
+        // Извлекаем чистый текст без тегов (ссылки станут просто текстом)
+        return temp.textContent.replace(/\s+/g, ' ').trim();
+    }
+
+    // --- ОЗВУЧКА ---
     function toggleSpeech() {
         if (isSpeaking) { stopSpeech(); } 
         else { startSpeech(); }
@@ -179,12 +199,17 @@
     }
 
     function startSpeech() {
-        const text = editor.value.trim();
-        if (!text) return;
+        // Берем текст из нового умного фильтра
+        const textToSpeak = getCleanTextForSpeech();
+        if (!textToSpeak) return;
+
         synth.cancel();
         updateSpeechUI(true);
-        speechQueue = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+        
+        // Разбиваем отфильтрованный текст на предложения
+        speechQueue = textToSpeak.match(/[^.!?…]+[.!?…]+/g) || [textToSpeak];
         currentChunkIndex = 0;
+        
         speakNextChunk();
     }
 
@@ -214,7 +239,7 @@
     editor.addEventListener('input', update);
     window.onload = () => { 
         applyLang();
-        editor.value = localStorage.getItem('kh_v53_draft') || ''; 
+        editor.value = localStorage.getItem('kh_v54_draft') || ''; 
         update();
     };
 </script>
